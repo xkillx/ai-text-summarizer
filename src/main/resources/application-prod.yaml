@@ -1,0 +1,12 @@
+# Production Environment Configuration
+logging:
+  level:
+    com.azharkhalid.ai_text_summarizer: INFO
+    org.springframework.web: WARN
+  file:
+    name: /var/log/ai-text-summarizer/application.log
+
+# Security headers
+server:
+  compression:
+    enabled: true

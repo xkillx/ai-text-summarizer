@@ -1,0 +1,10 @@
+# Development Environment Configuration
+logging:
+  level:
+    com.azharkhalid.ai_text_summarizer: DEBUG
+    org.springframework.web: DEBUG
+
+# Show SQL queries (if using database later)
+spring:
+  jpa:
+    show-sql: true
