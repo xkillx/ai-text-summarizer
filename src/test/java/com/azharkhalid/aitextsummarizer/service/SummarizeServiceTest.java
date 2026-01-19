@@ -5,6 +5,8 @@ import com.azharkhalid.aitextsummarizer.dto.request.SummarizeRequest;
 import com.azharkhalid.aitextsummarizer.dto.response.SummarizeResponse;
 import com.azharkhalid.aitextsummarizer.enums.SummaryStyle;
 import com.azharkhalid.aitextsummarizer.exception.SummarizerException;
+import com.azharkhalid.aitextsummarizer.validation.CharacterEncodingValidator;
+import com.azharkhalid.aitextsummarizer.validation.MaxInputSizeValidator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -36,6 +38,15 @@ class SummarizeServiceTest {
     @Mock
     private SummarizeProperties properties;
 
+    @Mock
+    private MaxInputSizeValidator sizeValidator;
+
+    @Mock
+    private CharacterEncodingValidator encodingValidator;
+
+    @Mock
+    private RateLimitingService rateLimitingService;
+
     @InjectMocks
     private SummarizeService summarizeService;
 
@@ -55,6 +66,12 @@ class SummarizeServiceTest {
         lenient().when(promptService.getSystemPrompt()).thenReturn("System prompt");
         lenient().when(promptService.buildPrompt(any(), any(), any()))
                 .thenReturn("User prompt");
+
+        // Setup validator mocks - do nothing by default
+        doNothing().when(sizeValidator).validate(any());
+        doNothing().when(sizeValidator).validateMinimumLength(any());
+        doNothing().when(encodingValidator).validate(any());
+        doNothing().when(rateLimitingService).checkRateLimit();
     }
 
     /**
@@ -86,7 +103,10 @@ class SummarizeServiceTest {
         assertThat(response.getModel()).isEqualTo("gpt-4o-mini");
         assertThat(response.getProcessingTimeMs()).isGreaterThan(0);
 
-        // Verify interactions (atLeastOnce because mock setup also calls prompt())
+        // Verify interactions
+        verify(rateLimitingService).checkRateLimit();
+        verify(sizeValidator).validate(any());
+        verify(encodingValidator).validate(any());
         verify(chatClient, atLeastOnce()).prompt();
         verify(promptService).getSystemPrompt();
         verify(promptService).buildPrompt(any(), eq(SummaryStyle.CONCISE), eq(50));

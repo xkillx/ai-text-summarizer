@@ -32,6 +32,17 @@ ai:
       max-attempts: 3
       backoff: 2s
 
+# Rate Limiting Configuration
+resilience4j:
+  ratelimiter:
+    instances:
+      summarizeApi:
+        limit-for-period: 10
+        limit-refresh-period: 1m
+        timeout-duration: 5s
+        register-health-indicator: true
+        event-consumer-buffer-size: 100
+
 # Actuator Configuration
 management:
   endpoints:
@@ -48,7 +59,8 @@ management:
 # Logging Configuration
 logging:
   level:
-    com.azharkhalid.ai_text_summarizer: INFO
+    com.azharkhalid.aitextsummarizer: INFO
     org.springframework.ai: DEBUG
+    io.github.resilience4j: DEBUG
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"

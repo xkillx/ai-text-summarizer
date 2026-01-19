@@ -96,4 +96,90 @@ public class InputSanitizer {
         }
         return input.matches("\\p{Print}+");
     }
+
+    /**
+     * Removes potentially dangerous markdown/JSON that could be used for injection.
+     *
+     * @param input The input text to sanitize
+     * @return Text with dangerous patterns neutralized
+     */
+    public static String sanitizeMarkdownJson(String input) {
+        if (input == null) {
+            return null;
+        }
+
+        // Escape JSON control characters
+        String sanitized = input
+                .replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\n", "\\n")
+                .replace("\r", "\\r")
+                .replace("\t", "\\t");
+
+        return sanitized;
+    }
+
+    /**
+     * Normalizes whitespace in the input text.
+     * Helps prevent attacks using excessive whitespace or zero-width characters.
+     *
+     * @param input The input text to normalize
+     * @return Text with normalized whitespace
+     */
+    public static String normalizeWhitespace(String input) {
+        if (input == null) {
+            return null;
+        }
+
+        // Replace multiple whitespace characters with a single space
+        // Also handles zero-width spaces and other unusual whitespace
+        return input.replaceAll("\\s+", " ").trim();
+    }
+
+    /**
+     * Validates that the input doesn't contain zero-width characters
+     * that can be used in attacks.
+     *
+     * @param input The input text to validate
+     * @throws InvalidInputException if zero-width characters are detected
+     */
+    public static void validateNoZeroWidthCharacters(String input) {
+        if (input == null) {
+            throw new InvalidInputException("Input cannot be null");
+        }
+
+        // Check for zero-width characters
+        if (input.contains("\u200B") ||  // Zero Width Space
+            input.contains("\u200C") ||  // Zero Width Non-Joiner
+            input.contains("\u200D") ||  // Zero Width Joiner
+            input.contains("\uFEFF")) {  // Zero Width No-Break Space
+
+            throw new InvalidInputException(
+                    "Input contains invalid characters (zero-width characters)"
+            );
+        }
+    }
+
+    /**
+     * Comprehensive sanitization that applies all security measures.
+     *
+     * @param input The input text to sanitize
+     * @return Fully sanitized text
+     * @throws InvalidInputException if validation fails
+     */
+    public static String sanitizeComprehensive(String input) {
+        // First, validate
+        validateNoZeroWidthCharacters(input);
+
+        // Then sanitize
+        String sanitized = sanitize(input);
+
+        // Strip HTML
+        sanitized = stripHtmlTags(sanitized);
+
+        // Normalize whitespace
+        sanitized = normalizeWhitespace(sanitized);
+
+        return sanitized;
+    }
 }
