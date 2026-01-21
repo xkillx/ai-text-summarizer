@@ -82,7 +82,8 @@ public class SummarizeController {
                 request.getMaxLength()
         );
 
-        SummarizeResponse response = summarizeService.summarize(request);
+        // The service now returns CompletableFuture due to @TimeLimiter
+        SummarizeResponse response = summarizeService.summarize(request).join();
 
         log.info("Returning summary. Summary length: {}, Processing time: {} ms",
                 response.getSummaryLength(),

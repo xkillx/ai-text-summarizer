@@ -5,6 +5,7 @@ import com.azharkhalid.aitextsummarizer.dto.request.SummarizeRequest;
 import com.azharkhalid.aitextsummarizer.dto.response.SummarizeResponse;
 import com.azharkhalid.aitextsummarizer.enums.SummaryStyle;
 import com.azharkhalid.aitextsummarizer.exception.SummarizerException;
+import com.azharkhalid.aitextsummarizer.metrics.SummarizeMetrics;
 import com.azharkhalid.aitextsummarizer.validation.CharacterEncodingValidator;
 import com.azharkhalid.aitextsummarizer.validation.MaxInputSizeValidator;
 import org.junit.jupiter.api.BeforeEach;
@@ -47,6 +48,9 @@ class SummarizeServiceTest {
     @Mock
     private RateLimitingService rateLimitingService;
 
+    @Mock
+    private SummarizeMetrics metrics;
+
     @InjectMocks
     private SummarizeService summarizeService;
 
@@ -72,6 +76,15 @@ class SummarizeServiceTest {
         doNothing().when(sizeValidator).validateMinimumLength(any());
         doNothing().when(encodingValidator).validate(any());
         doNothing().when(rateLimitingService).checkRateLimit();
+
+        // Setup metrics mocks - do nothing by default
+        // Use lenient() for stubs that may not always be used
+        lenient().doNothing().when(metrics).recordRequest();
+        lenient().doNothing().when(metrics).updateInputLength(anyLong());
+        lenient().doNothing().when(metrics).recordRequestDuration(anyLong());
+        lenient().doNothing().when(metrics).recordSuccess();
+        lenient().doNothing().when(metrics).recordFailure();
+        lenient().doNothing().when(metrics).recordTimeout();
     }
 
     /**
@@ -93,7 +106,7 @@ class SummarizeServiceTest {
         mockChatClientResponse(expectedSummary);
 
         // Act
-        SummarizeResponse response = summarizeService.summarize(validRequest);
+        SummarizeResponse response = summarizeService.summarize(validRequest).join();
 
         // Assert
         assertThat(response).isNotNull();
@@ -110,6 +123,8 @@ class SummarizeServiceTest {
         verify(chatClient, atLeastOnce()).prompt();
         verify(promptService).getSystemPrompt();
         verify(promptService).buildPrompt(any(), eq(SummaryStyle.CONCISE), eq(50));
+        verify(metrics).recordRequest();
+        verify(metrics).recordSuccess();
     }
 
     @Test
@@ -123,7 +138,7 @@ class SummarizeServiceTest {
         mockChatClientResponse("Summary");
 
         // Act
-        summarizeService.summarize(requestWithoutStyle);
+        summarizeService.summarize(requestWithoutStyle).join();
 
         // Assert
         verify(promptService).buildPrompt(any(), eq(SummaryStyle.CONCISE), isNull());
@@ -136,7 +151,7 @@ class SummarizeServiceTest {
         mockChatClientResponse("");
 
         // Act & Assert
-        assertThatThrownBy(() -> summarizeService.summarize(validRequest))
+        assertThatThrownBy(() -> summarizeService.summarize(validRequest).join())
                 .isInstanceOf(SummarizerException.class)
                 .hasMessageContaining("empty summary");
     }
@@ -148,7 +163,7 @@ class SummarizeServiceTest {
         mockChatClientResponse(null);
 
         // Act & Assert
-        assertThatThrownBy(() -> summarizeService.summarize(validRequest))
+        assertThatThrownBy(() -> summarizeService.summarize(validRequest).join())
                 .isInstanceOf(SummarizerException.class)
                 .hasMessageContaining("Failed to generate summary");
     }
@@ -160,7 +175,7 @@ class SummarizeServiceTest {
         mockChatClientResponse("Summary text");
 
         // Act
-        summarizeService.summarize(validRequest);
+        summarizeService.summarize(validRequest).join();
 
         // Assert
         verify(promptService).getSystemPrompt();

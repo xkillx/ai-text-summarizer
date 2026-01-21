@@ -5,6 +5,9 @@ import com.azharkhalid.aitextsummarizer.exception.InvalidInputException;
 import com.azharkhalid.aitextsummarizer.exception.LLMTimeoutException;
 import com.azharkhalid.aitextsummarizer.exception.RateLimitExceededException;
 import com.azharkhalid.aitextsummarizer.exception.SummarizerException;
+import com.azharkhalid.aitextsummarizer.logging.StructuredLogger;
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -12,19 +15,22 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.context.request.WebRequest;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * Global exception handler for all REST controllers.
- * Provides consistent error response format across the API.
+ * Provides consistent error response format across the API with structured logging.
  */
 @Slf4j
 @RestControllerAdvice
+@RequiredArgsConstructor
 public class GlobalExceptionHandler {
+
+    private final StructuredLogger structuredLogger;
 
     /**
      * Handles validation errors from @Valid annotation.
@@ -32,8 +38,9 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidationExceptions(
             MethodArgumentNotValidException ex,
-            WebRequest request
+            HttpServletRequest request
     ) {
+        String requestId = generateRequestId();
         Map<String, String> errors = new HashMap<>();
         ex.getBindingResult().getAllErrors().forEach((error) -> {
             String fieldName = ((FieldError) error).getField();
@@ -45,7 +52,8 @@ public class GlobalExceptionHandler {
                 ? "Validation failed"
                 : "Validation failed: " + errors.toString();
 
-        log.warn("Validation error: {}", message);
+        structuredLogger.logValidationError(requestId, "multiple", errors.toString());
+        log.warn("Validation error for request {}: {}", requestId, message);
 
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
@@ -58,9 +66,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(InvalidInputException.class)
     public ResponseEntity<ErrorResponse> handleInvalidInput(
             InvalidInputException ex,
-            WebRequest request
+            HttpServletRequest request
     ) {
-        log.warn("Invalid input: {}", ex.getMessage());
+        String requestId = generateRequestId();
+        structuredLogger.logValidationError(requestId, "input", ex.getMessage());
+        log.warn("Invalid input for request {}: {}", requestId, ex.getMessage());
 
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
@@ -73,9 +83,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(RateLimitExceededException.class)
     public ResponseEntity<ErrorResponse> handleRateLimitExceeded(
             RateLimitExceededException ex,
-            WebRequest request
+            HttpServletRequest request
     ) {
-        log.warn("Rate limit exceeded: {}", ex.getMessage());
+        String requestId = generateRequestId();
+        structuredLogger.logRateLimitExceeded(requestId);
+        log.warn("Rate limit exceeded for request {}: {}", requestId, ex.getMessage());
 
         return ResponseEntity
                 .status(HttpStatus.TOO_MANY_REQUESTS)
@@ -88,9 +100,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(LLMTimeoutException.class)
     public ResponseEntity<ErrorResponse> handleLLMTimeout(
             LLMTimeoutException ex,
-            WebRequest request
+            HttpServletRequest request
     ) {
-        log.error("LLM timeout: {}", ex.getMessage());
+        String requestId = generateRequestId();
+        structuredLogger.logSummarizeFailure(requestId, "TIMEOUT", ex.getMessage());
+        log.error("LLM timeout for request {}: {}", requestId, ex.getMessage());
 
         return ResponseEntity
                 .status(HttpStatus.SERVICE_UNAVAILABLE)
@@ -105,9 +119,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(SummarizerException.class)
     public ResponseEntity<ErrorResponse> handleSummarizerException(
             SummarizerException ex,
-            WebRequest request
+            HttpServletRequest request
     ) {
-        log.error("Summarizer exception: {}", ex.getMessage());
+        String requestId = generateRequestId();
+        structuredLogger.logSummarizeFailure(requestId, "SUMMARIZER_ERROR", ex.getMessage());
+        log.error("Summarizer exception for request {}: {}", requestId, ex.getMessage());
 
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -120,14 +136,20 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGlobalException(
             Exception ex,
-            WebRequest request
+            HttpServletRequest request
     ) {
-        log.error("Unexpected error occurred", ex);
+        String requestId = generateRequestId();
+        structuredLogger.logSummarizeFailure(requestId, "INTERNAL_ERROR", ex.getMessage());
+        log.error("Unexpected error for request {}", requestId, ex);
 
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ErrorResponse("INTERNAL_ERROR",
                         "An unexpected error occurred. Please try again later.",
                         LocalDateTime.now()));
+    }
+
+    private String generateRequestId() {
+        return UUID.randomUUID().toString().substring(0, 8);
     }
 }

@@ -1,0 +1,24 @@
+{
+  "index": {
+    "include": [
+      "src/**/*.java",
+      "src/**/resources/**/*.yml",
+      "src/**/resources/**/*.yaml",
+      "src/**/resources/**/*.properties",
+      "docs/**/*.md",
+      "pom.xml",
+      "build.gradle",
+      "build.gradle.kts"
+    ],
+    "exclude": [
+      "target/**",
+      "build/**",
+      ".gradle/**",
+      "**/*.class"
+    ]
+  },
+  "autocomplete": {
+    "enabled": true,
+    "suggestionCount": 5
+  }
+}

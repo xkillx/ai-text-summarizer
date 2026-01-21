@@ -32,8 +32,9 @@ ai:
       max-attempts: 3
       backoff: 2s
 
-# Rate Limiting Configuration
+# Resilience4j Configuration
 resilience4j:
+  # Rate Limiter Configuration
   ratelimiter:
     instances:
       summarizeApi:
@@ -43,18 +44,66 @@ resilience4j:
         register-health-indicator: true
         event-consumer-buffer-size: 100
 
+  # Retry Configuration - simplified for test compatibility
+  retry:
+    instances:
+      summarizeService:
+        max-attempts: 3
+        wait-duration: 1s
+        retry-exceptions:
+          - java.lang.Exception
+        ignore-exceptions:
+          - com.azharkhalid.aitextsummarizer.exception.InvalidInputException
+        register-health-indicator: true
+
+  # TimeLimiter Configuration
+  timelimiter:
+    instances:
+      summarizeService:
+        timeout-duration: 30s
+        cancel-running-future: true
+        register-health-indicator: true
+
 # Actuator Configuration
 management:
   endpoints:
     web:
       exposure:
         include: health,info,metrics,prometheus
+      base-path: /actuator
   endpoint:
     health:
       show-details: always
+      show-components: always
+    metrics:
+      enabled: true
+    prometheus:
+      enabled: true
   metrics:
+    export:
+      prometheus:
+        enabled: true
+        step: 1m
+        descriptions: true
     tags:
       application: ${spring.application.name}
+      environment: ${spring.profiles.active:default}
+    distribution:
+      percentiles-histogram:
+        summarize.request.duration: true
+      percentiles:
+        summarize.request.duration: 0.5,0.95,0.99
+      sla:
+        summarize.request.duration: 100ms,500ms,1s,2s,5s
+  health:
+    defaults:
+      enabled: true
+    diskspace:
+      enabled: true
+    redis:
+      enabled: false
+    db:
+      enabled: false
 
 # Logging Configuration
 logging:
