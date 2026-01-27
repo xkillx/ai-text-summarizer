@@ -18,9 +18,9 @@ class ResilienceHealthIndicatorTest {
 
     @BeforeEach
     void setUp() {
-        RetryRegistry retryRegistry = RetryRegistry.of();
-        TimeLimiterRegistry timeLimiterRegistry = TimeLimiterRegistry.of();
-        RateLimiterRegistry rateLimiterRegistry = RateLimiterRegistry.of();
+        RetryRegistry retryRegistry = RetryRegistry.ofDefaults();
+        TimeLimiterRegistry timeLimiterRegistry = TimeLimiterRegistry.ofDefaults();
+        RateLimiterRegistry rateLimiterRegistry = RateLimiterRegistry.ofDefaults();
 
         healthIndicator = new ResilienceHealthIndicator(
                 retryRegistry,

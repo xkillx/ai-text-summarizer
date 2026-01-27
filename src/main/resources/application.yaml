@@ -113,3 +113,29 @@ logging:
     io.github.resilience4j: DEBUG
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+
+# SpringDoc OpenAPI Configuration
+springdoc:
+  api-docs:
+    # Enable/disable OpenAPI docs
+    enabled: true
+    # Path for OpenAPI JSON endpoint
+    path: /v3/api-docs
+  swagger-ui:
+    # Enable/disable Swagger UI
+    enabled: true
+    # Path for Swagger UI
+    path: /swagger-ui.html
+    # Tags to display in Swagger UI
+    tags-sorter: alpha
+    # Operations to display in Swagger UI
+    operations-sorter: alpha
+    # Default models expansion depth
+    default-models-expand-depth: 2
+    # Default model expand depth
+    default-model-expand-depth: 1
+  show-actuator: true
+  # Group to show by default
+  group-order: SEQUENCE
+  packages-to-scan: com.azharkhalid.aitextsummarizer
+  paths-to-match: /api/v1/**

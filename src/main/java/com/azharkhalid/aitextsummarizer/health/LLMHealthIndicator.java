@@ -49,13 +49,18 @@ public class LLMHealthIndicator implements HealthIndicator {
             if (isConfigured) {
                 log.debug("LLM provider health check passed in {} ms", responseTime);
 
-                return Health.up()
+                Health.Builder builder = Health.up()
                         .withDetail("model", properties.getModel())
                         .withDetail("temperature", properties.getTemperature())
                         .withDetail("maxTokens", properties.getMaxTokens())
-                        .withDetail("checkDurationMs", responseTime)
-                        .withDetail("timeout", properties.getTimeout().toMillis() + "ms")
-                        .build();
+                        .withDetail("checkDurationMs", responseTime);
+
+                // Only add timeout if it's not null
+                if (properties.getTimeout() != null) {
+                    builder.withDetail("timeout", properties.getTimeout().toMillis() + "ms");
+                }
+
+                return builder.build();
             } else {
                 log.warn("LLM provider health check failed: model not configured");
 

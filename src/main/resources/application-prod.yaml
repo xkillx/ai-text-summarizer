@@ -1,12 +1,119 @@
 # Production Environment Configuration
+
+spring:
+  application:
+    name: ai-text-summarizer
+
+  # Don't allow Spring Boot to override environment variables
+  jmx:
+    unique-names: true
+
+# Actuator Configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        # Only expose necessary endpoints in production
+        include: health,info,metrics,prometheus
+      base-path: /actuator
+  endpoint:
+    health:
+      # Show detailed health information
+      show-details: always
+      show-components: always
+    metrics:
+      enabled: true
+    prometheus:
+      enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+      sla:
+        http.server.requests: 100ms,500ms,1s,2s
+    tags:
+      # Add application tag to all metrics
+      application: ${spring.application.name}
+      environment: prod
+
+# AI Summarizer Configuration
+ai:
+  summarizer:
+    model: ${AI_SUMMARIZER_MODEL:gpt-4o-mini}
+    temperature: ${AI_SUMMARIZER_TEMPERATURE:0.3}
+    max-tokens: ${AI_SUMMARIZER_MAX-TOKENS:500}
+    timeout: ${AI_SUMMARIZER_TIMEOUT:30s}
+
+    # Retry Configuration
+    retry:
+      max-attempts: ${RESILIENCE4J_RETRY_INSTANCES-SUMMARIZESERVICE-MAX-ATTEMPTS:3}
+      backoff: ${RESILIENCE4J_RETRY_INSTANCES-SUMMARIZESERVICE-WAIT-DURATION:2s}
+
+    # TimeLimiter Configuration
+    timeout:
+      duration: ${RESILIENCE4J_TIMELIMITER_INSTANCES-SUMMARIZESERVICE-TIMEOUT-DURATION:25s}
+
+# Resilience4j Configuration
+resilience4j:
+  retry:
+    instances:
+      summarizeService:
+        max-attempts: ${RESILIENCE4J_RETRY_INSTANCES-SUMMARIZESERVICE-MAX-ATTEMPTS:3}
+        wait-duration: ${RESILIENCE4J_RETRY_INSTANCES-SUMMARIZESERVICE-WAIT-DURATION:2s}
+        retry-exceptions:
+          - io.github.resilience4j.retry.MaxRetriesExceeded
+        ignore-exceptions:
+          - com.azharkhalid.aitextsummarizer.exception.InvalidInputException
+          - com.azharkhalid.aitextsummarizer.exception.RateLimitExceededException
+
+  timelimiter:
+    instances:
+      summarizeService:
+        timeout-duration: ${RESILIENCE4J_TIMELIMITER_INSTANCES-SUMMARIZESERVICE-TIMEOUT-DURATION:25s}
+
+  ratelimiter:
+    instances:
+      summarizeService:
+        limit-for-period: ${RESILIENCE4J-RATELIMITER_INSTANCES-SUMMARIZESERVICE-LIMIT-FOR-PERIOD:100}
+        limit-refresh-period: ${RESILIENCE4J-RATELIMITER_INSTANCES-SUMMARIZESERVICE-LIMIT-REFRESH-PERIOD:1m}
+        timeout-duration: 5s
+        register-health-indicator: true
+
+# Logging Configuration
 logging:
   level:
-    com.azharkhalid.ai_text_summarizer: INFO
-    org.springframework.web: WARN
+    root: INFO
+    com.azharkhalid.aitextsummarizer: INFO
+    org.springframework: WARN
+    io.github.resilience4j: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
   file:
     name: /var/log/ai-text-summarizer/application.log
+    max-size: 10MB
+    max-history: 30
 
-# Security headers
+# Server Configuration
 server:
+  port: 8080
   compression:
     enabled: true
+    mime-types: application/json,application/xml,text/html,text/xml,text/plain
+  tomcat:
+    threads:
+      max: 200
+      min-spare: 10
+    max-connections: 10000
+    accept-count: 100
+
+# SpringDoc OpenAPI Configuration
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+  show-actuator: false  # Hide actuator in production docs

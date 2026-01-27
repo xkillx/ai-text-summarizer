@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  ai-text-summarizer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ai-text-summarizer-dev
+    ports:
+      - "8080:8080"
+      - "5005:5005"  # Debug port
+    environment:
+      # Development Configuration
+      - SPRING_PROFILES_ACTIVE=dev
+      - SPRING_AI_OPENAI_API_KEY=${OPENAI_API_KEY}
+
+      # Enable debugging
+      - JAVA_AGENT=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
+
+      # Actuator - expose all endpoints in dev
+      - MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE=*
+
+      # Logging
+      - LOGGING_LEVEL_COM_AZHARKHALID_AITEXTSUMMARIZER=DEBUG
+
+    volumes:
+      # Mount source code for hot reload (if using devtools)
+      - ./src:/app/src:ro
+      - ./logs:/app/logs
+    restart: "no"
+    networks:
+      - ai-network
+
+networks:
+  ai-network:
+    driver: bridge

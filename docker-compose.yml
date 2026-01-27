@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  ai-text-summarizer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ai-text-summarizer
+    ports:
+      - "8080:8080"
+    environment:
+      # Spring Configuration
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_AI_OPENAI_API_KEY=${OPENAI_API_KEY}
+
+      # Actuator Configuration
+      - MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE=health,info,metrics,prometheus
+      - MANAGEMENT_ENDPOINT_HEALTH_SHOW-DETAILS=always
+
+      # Summarizer Configuration
+      - AI_SUMMARIZER_MODEL=gpt-4o-mini
+      - AI_SUMMARIZER_TEMPERATURE=0.3
+      - AI_SUMMARIZER_MAX-TOKENS=500
+      - AI_SUMMARIZER_TIMEOUT=30s
+
+      # Resilience Configuration
+      - RESILIENCE4J_RETRY_INSTANCES-SUMMARIZESERVICE-MAX-ATTEMPTS=3
+      - RESILIENCE4J_RETRY_INSTANCES-SUMMARIZESERVICE-WAIT-DURATION=2s
+      - RESILIENCE4J_TIMELIMITER_INSTANCES-SUMMARIZESERVICE-TIMEOUT-DURATION=25s
+
+      # Rate Limiting
+      - RESILIENCE4J-RATELIMITER_INSTANCES-SUMMARIZESERVICE-LIMIT-FOR-PERIOD=100
+      - RESILIENCE4J-RATELIMITER_INSTANCES-SUMMARIZESERVICE-LIMIT-REFRESH-PERIOD=1m
+
+      # JVM Options
+      - JAVA_OPTS=-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:InitialRAMPercentage=50.0
+
+    volumes:
+      # Mount logs directory for persistence
+      - ./logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 60s
+    networks:
+      - ai-network
+
+networks:
+  ai-network:
+    driver: bridge

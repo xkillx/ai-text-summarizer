@@ -49,7 +49,7 @@ class SummarizeControllerTest {
 
         SummarizeResponse response = SummarizeResponse.builder()
                 .summary("This is a summary.")
-                .inputLength(request.text().length())
+                .inputLength(request.getText().length())
                 .summaryLength(18)
                 .model("gpt-4o-mini")
                 .processingTimeMs(500)
@@ -64,7 +64,7 @@ class SummarizeControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.summary").value("This is a summary."))
-                .andExpect(jsonPath("$.inputLength").value(request.text().length()))
+                .andExpect(jsonPath("$.inputLength").value(request.getText().length()))
                 .andExpect(jsonPath("$.summaryLength").value(18))
                 .andExpect(jsonPath("$.model").value("gpt-4o-mini"))
                 .andExpect(jsonPath("$.processingTimeMs").value(500));
@@ -157,7 +157,7 @@ class SummarizeControllerTest {
 
         SummarizeResponse response = SummarizeResponse.builder()
                 .summary("This is a summary.")
-                .inputLength(request.text().length())
+                .inputLength(request.getText().length())
                 .summaryLength(18)
                 .model("gpt-4o-mini")
                 .processingTimeMs(500)
@@ -189,7 +189,7 @@ class SummarizeControllerTest {
 
         SummarizeResponse response = SummarizeResponse.builder()
                 .summary("- Point 1\n- Point 2\n- Point 3")
-                .inputLength(request.text().length())
+                .inputLength(request.getText().length())
                 .summaryLength(30)
                 .model("gpt-4o-mini")
                 .processingTimeMs(600)
@@ -222,7 +222,7 @@ class SummarizeControllerTest {
 
         SummarizeResponse response = SummarizeResponse.builder()
                 .summary("Executive Summary: Key insights and findings.")
-                .inputLength(request.text().length())
+                .inputLength(request.getText().length())
                 .summaryLength(45)
                 .model("gpt-4o-mini")
                 .processingTimeMs(700)
