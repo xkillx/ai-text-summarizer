@@ -24,7 +24,7 @@ A production-ready RESTful API for intelligent text summarization using OpenAI's
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/ai-text-summarizer.git
+git clone https://github.com/xkillx/ai-text-summarizer
 cd ai-text-summarizer
 
 # Set your OpenAI API key
@@ -101,12 +101,12 @@ See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for complete deployment guide.
 
 ### Environment Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `OPENAI_API_KEY` | OpenAI API key | Required |
-| `SPRING_PROFILES_ACTIVE` | Active profile | `prod` |
-| `AI_SUMMARIZER_MODEL` | Model to use | `gpt-4o-mini` |
-| `AI_SUMMARIZER_TEMPERATURE` | Temperature (0.0-2.0) | `0.3` |
+| Variable                    | Description           | Default       |
+| --------------------------- | --------------------- | ------------- |
+| `OPENAI_API_KEY`            | OpenAI API key        | Required      |
+| `SPRING_PROFILES_ACTIVE`    | Active profile        | `prod`        |
+| `AI_SUMMARIZER_MODEL`       | Model to use          | `gpt-4o-mini` |
+| `AI_SUMMARIZER_TEMPERATURE` | Temperature (0.0-2.0) | `0.3`         |
 
 See [docs/ENVIRONMENT_VARIABLES.md](docs/ENVIRONMENT_VARIABLES.md) for all options.
 
@@ -127,11 +127,13 @@ Generate a summary of the provided text.
 ```
 
 **Summary Styles:**
+
 - `CONCISE`: Brief paragraph-style summary
 - `BULLET`: Key points as bullet list
 - `EXECUTIVE`: High-level strategic summary
 
 **Response Codes:**
+
 - `200`: Success
 - `400`: Invalid input
 - `429`: Rate limit exceeded
